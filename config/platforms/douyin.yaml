@@ -1,0 +1,5 @@
+videoUrlTemplate: "https://www.douyin.com/video/{videoId}"
+
+network:
+  urlPatterns:
+    - "/aweme/v1/web/comment/list/"

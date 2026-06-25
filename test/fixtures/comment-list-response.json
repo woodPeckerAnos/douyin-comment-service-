@@ -1,0 +1,43 @@
+{
+  "status_code": 0,
+  "comments": [
+    {
+      "cid": "7523456789012345678",
+      "text": "第一条评论",
+      "aweme_id": "7123456789012345678",
+      "digg_count": 12,
+      "reply_comment_total": 15,
+      "create_time": 1710000000,
+      "user": {
+        "uid": "1234567890123456",
+        "sec_uid": "MS4wLjABAAAAtest"
+      }
+    },
+    {
+      "cid": "7523456789012345679",
+      "text": "第二条评论",
+      "aweme_id": "7123456789012345678",
+      "digg_count": 3,
+      "reply_comment_total": 2,
+      "create_time": 1710000100,
+      "user": {
+        "uid": "2234567890123456"
+      }
+    },
+    {
+      "cid": "7523456789012345679",
+      "text": "重复评论应被去重",
+      "reply_comment_total": 99
+    },
+    {
+      "cid": "7523456789012345680",
+      "text": "",
+      "reply_comment_total": 0,
+      "create_time": 1710000200,
+      "user": { "uid": "3234567890123456" }
+    }
+  ],
+  "has_more": 1,
+  "cursor": 20,
+  "total": 120
+}
