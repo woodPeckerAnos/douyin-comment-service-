@@ -34,6 +34,8 @@ const envSchema = z.object({
     .default("true")
     .transform((v) => v === "true"),
   SAMPLING_OVER_FETCH_TARGET: z.coerce.number().int().positive().default(1500),
+  QUEUE_JOBS_CONFIG_PATH: z.string().default("config/queue-jobs.yaml"),
+  QUEUE_DEFAULT_JOB_NAME: z.string().default("douyin_fetch_comments"),
 });
 
 export type AppConfig = z.infer<typeof envSchema> & {
@@ -42,6 +44,7 @@ export type AppConfig = z.infer<typeof envSchema> & {
   jobsPath: string;
   resultsPath: string;
   platformConfigPath: string;
+  queueJobsPath: string;
 };
 
 let cachedConfig: AppConfig | null = null;
@@ -65,6 +68,7 @@ export function getConfig(): AppConfig {
     jobsPath: resolveFromRoot(parsed.JOBS_DIR),
     resultsPath: resolveFromRoot(parsed.RESULTS_DIR),
     platformConfigPath: path.join(projectRoot, "config/platforms/douyin.yaml"),
+    queueJobsPath: resolveFromRoot(parsed.QUEUE_JOBS_CONFIG_PATH),
   };
   return cachedConfig;
 }

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getPool } from "../db/pool.js";
+import { persistDouyinComments } from "../db/persist-douyin-comments.js";
 import type { FetchJob, FetchOptions, FetchResult } from "../types/comment.js";
 
 interface JobRow {
@@ -128,26 +129,45 @@ export class DbJobStore {
     }
 
     const pool = getPool();
-    await pool.query(
-      `INSERT INTO fetch_results
-         (job_id, video_id, status, error, meta, comments, high_reply_comments)
-       VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7::jsonb)
-       ON CONFLICT (job_id, video_id) DO UPDATE SET
-         status = EXCLUDED.status,
-         error = EXCLUDED.error,
-         meta = EXCLUDED.meta,
-         comments = EXCLUDED.comments,
-         high_reply_comments = EXCLUDED.high_reply_comments`,
-      [
-        jobId,
-        result.video_id,
-        result.status,
-        result.error ?? null,
-        JSON.stringify(result.meta),
-        JSON.stringify(result.comments),
-        JSON.stringify(result.high_reply_comments),
-      ],
-    );
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const fetchResultRow = await client.query<{ id: number }>(
+        `INSERT INTO fetch_results
+           (job_id, video_id, status, error, meta, comments, high_reply_comments)
+         VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7::jsonb)
+         ON CONFLICT (job_id, video_id) DO UPDATE SET
+           status = EXCLUDED.status,
+           error = EXCLUDED.error,
+           meta = EXCLUDED.meta,
+           comments = EXCLUDED.comments,
+           high_reply_comments = EXCLUDED.high_reply_comments
+         RETURNING id`,
+        [
+          jobId,
+          result.video_id,
+          result.status,
+          result.error ?? null,
+          JSON.stringify(result.meta),
+          JSON.stringify(result.comments),
+          JSON.stringify(result.high_reply_comments),
+        ],
+      );
+
+      const fetchResultId = fetchResultRow.rows[0]?.id;
+      if (fetchResultId !== undefined) {
+        await persistDouyinComments(client, fetchResultId, result);
+      }
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
 
     job.results.push(result);
     this.memory.set(jobId, job);

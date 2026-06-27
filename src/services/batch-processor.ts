@@ -1,7 +1,7 @@
 import { mergeFetchOptions, type FetchOptionsOverride } from "./fetch-options.js";
 import { PlaywrightDriver } from "../drivers/playwright-driver.js";
 import { FetchError } from "../types/comment.js";
-import type { FetchOptions, FetchResult } from "../types/comment.js";
+import type { FetchJob, FetchOptions, FetchResult } from "../types/comment.js";
 import { CommentFetcher } from "./comment-fetcher.js";
 import { getJobStore } from "./job-store.js";
 import { randomDelay, sleep } from "../utils/retry.js";
@@ -38,6 +38,38 @@ export async function startFetchJob(
   });
 
   return job.job_id;
+}
+
+export async function runFetchJobBlocking(
+  videoIds: string[],
+  options?: FetchOptionsOverride,
+): Promise<FetchJob> {
+  if (runningJobId) {
+    throw new Error(`Another job is running: ${runningJobId}`);
+  }
+
+  const normalizedIds = videoIds.map((id) => normalizeVideoId(id)).filter(Boolean);
+  if (normalizedIds.length !== videoIds.length) {
+    throw new Error("All video_ids must be valid Douyin video IDs or URLs");
+  }
+
+  const mergedOptions = mergeFetchOptions(options);
+  const store = getJobStore();
+  const job = await store.createJob(normalizedIds as string[], mergedOptions);
+
+  try {
+    await processJob(job.job_id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    await store.markFailed(job.job_id, message);
+    throw error;
+  }
+
+  const completed = await store.getJob(job.job_id);
+  if (!completed) {
+    throw new Error(`Job not found after completion: ${job.job_id}`);
+  }
+  return completed;
 }
 
 async function processJob(jobId: string): Promise<void> {

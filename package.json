@@ -6,6 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "worker": "tsx src/worker.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "fetch": "tsx src/cli.ts",
@@ -23,17 +24,18 @@
     "@koa/bodyparser": "^6.1.0",
     "@koa/router": "^15.6.0",
     "dotenv": "^17.4.2",
+    "job-queue": "file:../job-queue/node",
     "koa": "^3.2.1",
+    "pg": "^8.16.0",
     "playwright-core": "^1.52.0",
     "yaml": "^2.7.1",
-    "zod": "^4.4.3",
-    "pg": "^8.16.0"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/pg": "^8.15.4",
     "@types/koa": "^3.0.3",
     "@types/koa__router": "^12.0.5",
     "@types/node": "^26.0.0",
+    "@types/pg": "^8.15.4",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"

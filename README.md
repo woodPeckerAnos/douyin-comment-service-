@@ -40,10 +40,11 @@ npm run dev
 
 | Method | Path                            | 说明                     |
 | ------ | ------------------------------- | ---------------------- |
-| GET    | `/health`                       | 健康检查                   |
+| GET    | `/health`                       | 健康检查（含 queue 状态）      |
 | POST   | `/api/comments/fetch`           | 异步批量拉取，返回 `{ job_id }` |
 | GET    | `/api/comments/fetch/:jobId`    | 查询 Job 状态与结果           |
 | GET    | `/api/videos/:videoId/comments` | 同步单视频（调试）              |
+| POST   | `/api/queue/comments/fetch`     | 入队批量拉取（需 `DATABASE_URL`） |
 
 
 ### 批量拉取示例
@@ -128,6 +129,12 @@ npm run fetch -- --video-id 7123456789012345678 --over-fetch 2000
 | `RESULTS_DIR`            | 结果快照目录        | `./results`                   |
 | `SAMPLING_ENABLED`       | 启用分层抽样         | `true`                        |
 | `SAMPLING_OVER_FETCH_TARGET` | 抽样前 over-fetch 条数 | `1500`                    |
+| `DATABASE_URL`               | PostgreSQL 连接（可选，启用 DB 持久化） | — |
+| `REDIS_HOST` / `REDIS_PORT`  | job-queue Redis 连接 | `127.0.0.1` / `6379` |
+| `QUEUE_NAME`                 | Redis Stream 前缀 | `jobs` |
+| `QUEUE_DEFAULT_JOB_NAME`     | HTTP 入队默认 job 名 | `douyin_fetch_comments` |
+| `WORKER_CONCURRENCY`         | Worker 并发（建议 1） | `1` |
+| `WORKER_NAME`                | Consumer 名称前缀 | `douyin-comment` |
 
 
 ## 脚本
@@ -136,23 +143,52 @@ npm run fetch -- --video-id 7123456789012345678 --over-fetch 2000
 | 命令                  | 说明             |
 | ------------------- | -------------- |
 | `npm run dev`       | 开发模式启动 HTTP 服务 |
+| `npm run worker`    | 启动 Redis 队列 Worker |
 | `npm run fetch`     | CLI 单视频拉取      |
 | `npm run build`     | 编译 TypeScript  |
-| `npm start`         | 运行编译产物         |
+| `npm start`         | 运行编译产物（HTTP） |
 | `npm test`          | 单元测试           |
 | `npm run typecheck` | 类型检查           |
 
 
+## 消息队列（job-queue）
+
+使用 [job-queue](../job-queue/) SDK（Redis Streams），与 [job-scheduler](../job-scheduler/) 对接。Job 名须与 `config/queue-jobs.yaml` 及 scheduler 的 `jobs.yaml` 一致。
+
+```bash
+# 1. 构建 job-queue SDK
+cd ../job-queue/node && npm run build
+
+# 2. 安装依赖并配置 .env（REDIS_* 等）
+cd ../douyin-comment-service && npm install
+
+# 3. PC 宿主机启动 Worker（与 discovery Worker 互斥 Profile）
+npm run worker
+```
+
+### HTTP 入队
+
+```bash
+curl -X POST http://localhost:3001/api/queue/comments/fetch \
+  -H 'Content-Type: application/json' \
+  -H 'X-Trace-Id: pipeline-run-42' \
+  -d '{
+    "video_ids": ["7123456789012345678"],
+    "options": { "delay_ms": 1500 }
+  }'
+```
+
+Payload 结构见 `src/mq/payload.ts`（`video_ids` + 可选 `options` / `trace_id`）。
+
 ## 架构
 
 ```
-HTTP / CLI
-  → BatchProcessor / CommentFetcher
-  → PlaywrightDriver (shared profile)
-  → Network intercept comment/list
-  → CommentParser
-  → CommentSampler（分层配额抽样）
-  → JobStore (jobs/*.json + results/*.json)
+src/server/          Koa HTTP
+  app.ts / start.ts  应用组装与启动
+  routes/            HTTP 路由
+src/mq/              job-queue handler 注册与入队
+src/worker.ts        Redis Worker 入口
+services/            BatchProcessor / CommentFetcher / JobStore
 ```
 
 ## 合规说明
