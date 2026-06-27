@@ -1,0 +1,12 @@
+node_modules
+dist
+jobs
+results
+.env
+.env.*
+!.env.example
+*.log
+test
+.git
+.gitignore
+README.md

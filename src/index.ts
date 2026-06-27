@@ -1,10 +1,17 @@
 import Koa from "koa";
 import bodyParser from "@koa/bodyparser";
 import { getConfig, getPort } from "./config.js";
+import { isDatabaseEnabled } from "./db/pool.js";
+import { runMigrations } from "./db/migrate.js";
 import { commentsRouter } from "./routes/comments.js";
 
 async function main(): Promise<void> {
   getConfig();
+
+  if (isDatabaseEnabled()) {
+    await runMigrations();
+    console.log("[db] PostgreSQL connected, migrations applied");
+  }
 
   const app = new Koa();
 

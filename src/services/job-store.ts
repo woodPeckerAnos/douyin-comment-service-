@@ -1,10 +1,22 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { isDatabaseEnabled } from "../db/pool.js";
+import { DbJobStore } from "./db-job-store.js";
 import { getConfig } from "../config.js";
 import type { FetchJob, FetchOptions, FetchResult } from "../types/comment.js";
 
-export class JobStore {
+export interface JobStoreLike {
+  createJob(videoIds: string[], options: FetchOptions): Promise<FetchJob>;
+  getJob(jobId: string): Promise<FetchJob | null>;
+  updateJob(job: FetchJob): Promise<void>;
+  appendResult(jobId: string, result: FetchResult): Promise<FetchJob | null>;
+  markRunning(jobId: string): Promise<FetchJob | null>;
+  markCompleted(jobId: string): Promise<FetchJob | null>;
+  markFailed(jobId: string, error: string): Promise<FetchJob | null>;
+}
+
+export class JobStore implements JobStoreLike {
   private readonly memory = new Map<string, FetchJob>();
 
   async createJob(
@@ -111,11 +123,11 @@ export class JobStore {
   }
 }
 
-let store: JobStore | null = null;
+let store: JobStoreLike | null = null;
 
-export function getJobStore(): JobStore {
+export function getJobStore(): JobStoreLike {
   if (!store) {
-    store = new JobStore();
+    store = isDatabaseEnabled() ? new DbJobStore() : new JobStore();
   }
   return store;
 }
