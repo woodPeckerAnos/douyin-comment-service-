@@ -135,6 +135,9 @@ npm run fetch -- --video-id 7123456789012345678 --over-fetch 2000
 | `QUEUE_DEFAULT_JOB_NAME`     | HTTP 入队默认 job 名 | `douyin_fetch_comments` |
 | `WORKER_CONCURRENCY`         | Worker 并发（建议 1） | `1` |
 | `WORKER_NAME`                | Consumer 名称前缀 | `douyin-comment` |
+| `SERVICE_NAME`               | 日志 service 字段 | `douyin-comment` |
+| `LOG_SINK_URL`               | Vector HTTP 采集地址 | `http://127.0.0.1:8088/` |
+| `LOG_SINK_ENABLED`           | 是否 POST 至 Vector | `true` |
 
 
 ## 脚本

@@ -1,6 +1,8 @@
 import Koa from "koa";
 import bodyParser from "@koa/bodyparser";
+import { log } from "../utils/logger.js";
 import { errorHandler } from "./middleware/error-handler.js";
+import { httpLogger } from "./middleware/http-logger.js";
 import { commentsRouter } from "./routes/comments.js";
 import { healthRouter } from "./routes/health.js";
 import { queueRouter } from "./routes/queue.js";
@@ -9,6 +11,7 @@ export function createApp(): Koa {
   const app = new Koa();
 
   app.use(errorHandler);
+  app.use(httpLogger);
   app.use(
     bodyParser({
       jsonLimit: "1mb",
@@ -27,10 +30,16 @@ export function createApp(): Koa {
 }
 
 export function logHttpRoutes(port: number): void {
-  console.log(`Douyin comment service listening on http://localhost:${port}`);
-  console.log("  GET  /health");
-  console.log("  POST /api/comments/fetch");
-  console.log("  GET  /api/comments/fetch/:jobId");
-  console.log("  GET  /api/videos/:videoId/comments");
-  console.log("  POST /api/queue/comments/fetch");
+  log.info("HTTP server listening", {
+    context: {
+      url: `http://localhost:${port}`,
+      routes: [
+        "GET /health",
+        "POST /api/comments/fetch",
+        "GET /api/comments/fetch/:jobId",
+        "GET /api/videos/:videoId/comments",
+        "POST /api/queue/comments/fetch",
+      ],
+    },
+  });
 }

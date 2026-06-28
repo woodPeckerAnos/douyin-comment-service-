@@ -14,22 +14,29 @@ export async function handleCommentFetchJob(message: JobMessage): Promise<void> 
     message.payload,
   );
 
-  log.info("Starting comment fetch job", {
-    jobName: message.jobName,
-    traceId: trace_id,
-    videoCount: video_ids.length,
-    trigger: message.trigger,
-    attempt: message.attempt ?? 1,
+  const started = Date.now();
+
+  log.info("Comment fetch job started", {
+    trace_id,
+    job_name: message.jobName,
+    context: {
+      video_count: video_ids.length,
+      trigger: message.trigger,
+      attempt: message.attempt ?? 1,
+    },
   });
 
   const fetchJob = await runFetchJobBlocking(video_ids, options);
 
-  log.info("Comment fetch job finished", {
-    jobName: message.jobName,
-    traceId: trace_id,
-    fetchJobId: fetchJob.job_id,
-    status: fetchJob.status,
-    resultCount: fetchJob.results.length,
+  log.info("Comment fetch job completed", {
+    trace_id,
+    job_name: message.jobName,
+    job_id: fetchJob.job_id,
+    duration_ms: Date.now() - started,
+    context: {
+      status: fetchJob.status,
+      result_count: fetchJob.results.length,
+    },
   });
 
   if (fetchJob.status === "failed") {

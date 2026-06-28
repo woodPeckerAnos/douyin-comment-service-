@@ -6,6 +6,7 @@ import { CommentFetcher } from "./comment-fetcher.js";
 import { getJobStore } from "./job-store.js";
 import { randomDelay, sleep } from "../utils/retry.js";
 import { normalizeVideoId } from "../utils/video-id.js";
+import { log } from "../utils/logger.js";
 
 let runningJobId: string | null = null;
 
@@ -33,8 +34,18 @@ export async function startFetchJob(
 
   void processJob(job.job_id).catch(async (error) => {
     const message = error instanceof Error ? error.message : "Unknown error";
+    log.error("Fetch job failed", {
+      job_id: job.job_id,
+      error,
+      context: { video_count: normalizedIds.length },
+    });
     await store.markFailed(job.job_id, message);
     runningJobId = null;
+  });
+
+  log.info("Fetch job accepted", {
+    job_id: job.job_id,
+    context: { video_count: normalizedIds.length, async: true },
   });
 
   return job.job_id;
@@ -81,15 +92,27 @@ async function processJob(jobId: string): Promise<void> {
 
   runningJobId = jobId;
   await store.markRunning(jobId);
+  const started = Date.now();
+
+  log.info("Fetch job started", {
+    job_id: jobId,
+    context: { video_count: job.video_ids.length },
+  });
 
   const driver = await PlaywrightDriver.create();
   try {
     const loggedIn = await driver.isLoggedIn();
     if (!loggedIn) {
+      log.warn("Browser profile not logged in", { job_id: jobId });
       for (const videoId of job.video_ids) {
         await store.appendResult(jobId, authExpiredResult(videoId));
       }
       await store.markCompleted(jobId);
+      log.info("Fetch job completed", {
+        job_id: jobId,
+        duration_ms: Date.now() - started,
+        context: { status: "auth_expired" },
+      });
       return;
     }
 
@@ -105,8 +128,21 @@ async function processJob(jobId: string): Promise<void> {
     }
 
     await store.markCompleted(jobId);
+    log.info("Fetch job completed", {
+      job_id: jobId,
+      duration_ms: Date.now() - started,
+      context: {
+        video_count: job.video_ids.length,
+        result_count: job.results.length,
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    log.error("Fetch job failed", {
+      job_id: jobId,
+      duration_ms: Date.now() - started,
+      error,
+    });
     await store.markFailed(jobId, message);
     throw error;
   } finally {

@@ -28,6 +28,8 @@ export async function registerCommentFetchHandlers(): Promise<string[]> {
     registerHandler(jobName, handleCommentFetchJob);
   }
 
-  log.info("Registered queue handlers", { jobNames });
+  log.info("Registered queue handlers", {
+    context: { job_names: jobNames },
+  });
   return jobNames;
 }

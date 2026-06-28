@@ -2,6 +2,7 @@ import type { Server } from "node:http";
 import { getPort } from "../config.js";
 import { isDatabaseEnabled } from "../db/pool.js";
 import { runMigrations } from "../db/migrate.js";
+import { log } from "../utils/logger.js";
 import { createApp, logHttpRoutes } from "./app.js";
 
 let httpServer: Server | null = null;
@@ -9,7 +10,7 @@ let httpServer: Server | null = null;
 export async function startServer(): Promise<void> {
   if (isDatabaseEnabled()) {
     await runMigrations();
-    console.log("[db] PostgreSQL connected, migrations applied");
+    log.info("PostgreSQL migrations applied");
   }
 
   const app = createApp();
@@ -23,7 +24,7 @@ export async function startServer(): Promise<void> {
 
 function registerShutdownHooks(): void {
   const shutdown = async (signal: string) => {
-    console.log(`[server] received ${signal}, shutting down...`);
+    log.info("Server shutting down", { context: { signal } });
 
     if (httpServer) {
       await new Promise<void>((resolve, reject) => {

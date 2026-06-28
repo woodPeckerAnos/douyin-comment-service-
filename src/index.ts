@@ -1,9 +1,10 @@
 import { startServer } from "./server/start.js";
 import { getConfig } from "./config.js";
+import { log } from "./utils/logger.js";
 
 getConfig();
 
 startServer().catch((error) => {
-  console.error("Failed to start server:", error);
+  log.fatal("Failed to start server", { error });
   process.exit(1);
 });
