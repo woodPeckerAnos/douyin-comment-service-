@@ -1,3 +1,7 @@
+/**
+ * 单视频评论拉取：Network 拦截 /aweme/v1/web/comment/list/ + 滚动翻页。
+ * 可选分层抽样（comment-sampler）在 over-fetch 后按配额截断至 max_comments_per_video。
+ */
 import { applyStratifiedSampling } from "./comment-sampler.js";
 import { getFetchCollectionTarget } from "./fetch-options.js";
 import type { Response } from "playwright-core";

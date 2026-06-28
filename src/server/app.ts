@@ -1,3 +1,4 @@
+/** 组装 Koa 应用：中间件 + 评论 / 健康 / 队列入队路由 */
 import Koa from "koa";
 import bodyParser from "@koa/bodyparser";
 import { log } from "../utils/logger.js";

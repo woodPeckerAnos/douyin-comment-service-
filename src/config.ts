@@ -1,3 +1,4 @@
+/** 应用配置；BROWSER_PROFILE_DIR 默认指向 discovery 的 profiles/douyin */
 import "dotenv/config";
 import { z } from "zod";
 import path from "node:path";

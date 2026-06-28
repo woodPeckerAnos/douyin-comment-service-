@@ -1,3 +1,7 @@
+/**
+ * Redis Streams Worker 入口（npm run worker），与 HTTP 服务（npm run dev）独立进程。
+ * 消费 job-queue 中 config/queue-jobs.yaml 注册的 job 名，调用 runFetchJobBlocking。
+ */
 import { createWorker } from "job-queue";
 import { registerCommentFetchHandlers } from "./mq/register.js";
 import { log, logFromJobQueue } from "./utils/logger.js";
@@ -14,6 +18,7 @@ async function main(): Promise<void> {
   }
 
   const worker = createWorker({
+    queueName: process.env.QUEUE_NAME ?? "comments-douyin",
     concurrency,
     consumerName: process.env.WORKER_NAME ?? "douyin-comment",
     onLog: (level, message, meta) => logFromJobQueue(level, message, meta),
@@ -32,7 +37,7 @@ async function main(): Promise<void> {
 
   log.info("Comment fetch worker starting", {
     context: {
-      queue: process.env.QUEUE_NAME ?? "jobs",
+      queue: process.env.QUEUE_NAME ?? "comments-douyin",
       redis: `${process.env.REDIS_HOST ?? "127.0.0.1"}:${process.env.REDIS_PORT ?? 6379}`,
       concurrency,
       jobNames,

@@ -1,3 +1,4 @@
+/** 将 config/queue-jobs.yaml（或 QUEUE_JOB_NAMES）中的 job 名注册到 job-queue SDK */
 import { readFile } from "node:fs/promises";
 import { parse } from "yaml";
 import { z } from "zod";

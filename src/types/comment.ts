@@ -21,7 +21,7 @@ export interface Comment {
   reply_count: number;
   is_high_reply: boolean;
   create_time: number;
-  /** 分层抽样来源桶（仅抽样开启时有值） */
+  /** 分层抽样来源桶；仅某次 fetch 有效，规范化后写入 douyin_comment_observations.sample_bucket */
   sample_bucket?: SampleBucket;
 }
 

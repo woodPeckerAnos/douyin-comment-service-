@@ -1,3 +1,7 @@
+/**
+ * PostgreSQL Job 持久化：fetch_jobs / fetch_results（JSONB 快照）
+ * + 双写 douyin_comments 规范化表。
+ */
 import { randomUUID } from "node:crypto";
 import { getPool } from "../db/pool.js";
 import { persistDouyinComments } from "../db/persist-douyin-comments.js";
@@ -47,6 +51,7 @@ function resultRowToFetchResult(row: ResultRow): FetchResult {
 }
 
 export class DbJobStore {
+  /** 运行中 job 的进程内缓存，appendResult 与 getJob 共享同一对象引用 */
   private readonly memory = new Map<string, FetchJob>();
 
   async createJob(
@@ -122,6 +127,7 @@ export class DbJobStore {
     this.memory.set(job.job_id, job);
   }
 
+  /** 事务：写 fetch_results JSONB 快照 + upsert douyin_comments / observations */
   async appendResult(jobId: string, result: FetchResult): Promise<FetchJob | null> {
     const job = await this.getJob(jobId);
     if (!job) {

@@ -1,3 +1,4 @@
+/** Koa HTTP 启动：迁移 DB、监听端口、注册 SIGINT/SIGTERM 优雅退出 */
 import type { Server } from "node:http";
 import { getPort } from "../config.js";
 import { isDatabaseEnabled } from "../db/pool.js";

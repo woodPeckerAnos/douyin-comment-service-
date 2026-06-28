@@ -1,3 +1,9 @@
+/**
+ * 抖音评论规范化落库（douyin_comments + douyin_comment_observations）。
+ *
+ * video_id 逻辑对齐 content_discovery.platform_contents.platform_id；
+ * sample_bucket 仅存 observations，因属某次 fetch 的抽样上下文而非评论固有属性。
+ */
 import type pg from "pg";
 import type { Comment, FetchResult } from "../types/comment.js";
 
@@ -93,6 +99,7 @@ async function upsertDouyinComments(
   );
 }
 
+/** 同一 fetch_result 重跑时先删后插，避免 observations 重复累积 */
 async function replaceDouyinCommentObservations(
   client: pg.PoolClient,
   fetchResultId: number,

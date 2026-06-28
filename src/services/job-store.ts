@@ -1,3 +1,6 @@
+/**
+ * Job 存储抽象：DATABASE_URL 存在时用 DbJobStore，否则回退 jobs/*.json 文件。
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";

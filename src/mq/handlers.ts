@@ -1,3 +1,4 @@
+/** job-queue 消费端：解析 payload → runFetchJobBlocking → 失败抛出让队列重试 */
 import type { JobMessage } from "job-queue";
 import { runMigrations } from "../db/migrate.js";
 import { isDatabaseEnabled } from "../db/pool.js";
@@ -15,9 +16,10 @@ export async function handleCommentFetchJob(message: JobMessage): Promise<void> 
   );
 
   const started = Date.now();
+  const traceId = message.traceId ?? trace_id;
 
   log.info("Comment fetch job started", {
-    trace_id,
+    trace_id: traceId,
     job_name: message.jobName,
     context: {
       video_count: video_ids.length,
@@ -29,7 +31,7 @@ export async function handleCommentFetchJob(message: JobMessage): Promise<void> 
   const fetchJob = await runFetchJobBlocking(video_ids, options);
 
   log.info("Comment fetch job completed", {
-    trace_id,
+    trace_id: traceId,
     job_name: message.jobName,
     job_id: fetchJob.job_id,
     duration_ms: Date.now() - started,

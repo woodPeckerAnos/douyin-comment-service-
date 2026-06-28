@@ -1,3 +1,9 @@
+/**
+ * 批量拉取任务编排：HTTP 异步（startFetchJob）与 MQ 同步（runFetchJobBlocking）共用 processJob。
+ *
+ * 约束：进程内同时只能跑一个 fetch job（runningJobId），因与 content-discovery
+ * 共享 Chrome Profile，调度层亦应避免 discovery 与 comment 并行占用 Profile。
+ */
 import { mergeFetchOptions, type FetchOptionsOverride } from "./fetch-options.js";
 import { PlaywrightDriver } from "../drivers/playwright-driver.js";
 import { FetchError } from "../types/comment.js";
@@ -8,12 +14,14 @@ import { randomDelay, sleep } from "../utils/retry.js";
 import { normalizeVideoId } from "../utils/video-id.js";
 import { log } from "../utils/logger.js";
 
+/** 进程内单 job 互斥；与 Playwright 单 Profile 绑定 */
 let runningJobId: string | null = null;
 
 export function isJobRunning(): boolean {
   return runningJobId !== null;
 }
 
+/** HTTP 202：创建 job 后立即返回，后台 void processJob */
 export async function startFetchJob(
   videoIds: string[],
   options?: FetchOptionsOverride,
@@ -51,6 +59,7 @@ export async function startFetchJob(
   return job.job_id;
 }
 
+/** MQ Worker：阻塞直到整批视频处理完毕，失败时抛出让 job-queue 重试 */
 export async function runFetchJobBlocking(
   videoIds: string[],
   options?: FetchOptionsOverride,
@@ -151,6 +160,7 @@ async function processJob(jobId: string): Promise<void> {
   }
 }
 
+/** 单视频业务错误转为 FetchResult，不中断同 job 内后续视频 */
 async function fetchVideoWithFetcher(
   fetcher: CommentFetcher,
   videoId: string,
@@ -193,6 +203,7 @@ function authExpiredResult(videoId: string): FetchResult {
   };
 }
 
+/** CLI / 调试：不经 JobStore，单进程单次拉取 */
 export async function fetchVideoCommentsSync(
   videoIdInput: string,
   options?: FetchOptionsOverride,

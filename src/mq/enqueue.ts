@@ -1,11 +1,14 @@
+/** HTTP POST /api/queue/comments/fetch 入队封装 */
 import { enqueueJob, queueConfigFromEnv } from "job-queue";
-import type { CommentFetchPayload } from "./payload.js";
+import type { CommentFetchBatchPayload, CommentFetchPipelinePayload } from "./payload.js";
 
 export async function enqueueCommentFetchJob(
   jobName: string,
-  payload: CommentFetchPayload,
+  payload: CommentFetchBatchPayload | CommentFetchPipelinePayload,
+  options: { trigger?: "manual" | "pipeline"; traceId?: string } = {},
 ): Promise<string> {
   return enqueueJob(queueConfigFromEnv(), jobName, payload, {
-    trigger: "manual",
+    trigger: options.trigger ?? "manual",
+    traceId: options.traceId,
   });
 }

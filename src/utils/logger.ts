@@ -1,3 +1,7 @@
+/**
+ * 结构化日志：符合 Projects/schemas/log-entry.schema.json。
+ * 同时写 stdout（Promtail 采集）并 POST 至 Vector HTTP（LOG_SINK_URL，默认 :8088）。
+ */
 import type {
   LogEntry,
   LogEnv,

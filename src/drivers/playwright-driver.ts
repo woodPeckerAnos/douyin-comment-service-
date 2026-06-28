@@ -1,3 +1,7 @@
+/**
+ * Playwright 持久化 Context，复用 content-discovery 的 Chrome Profile 登录态。
+ * 登录检测须读 context.cookies()：sessionid 为 HttpOnly，document.cookie 不可见。
+ */
 import path from "node:path";
 import fs from "node:fs/promises";
 import {

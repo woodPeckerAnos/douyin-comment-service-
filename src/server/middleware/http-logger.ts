@@ -1,3 +1,4 @@
+/** 记录 API 请求；跳过 /health 避免探针刷屏 */
 import type { Context, Next } from "koa";
 import { log } from "../../utils/logger.js";
 
@@ -15,6 +16,7 @@ export async function httpLogger(ctx: Context, next: Next): Promise<void> {
   try {
     await next();
   } finally {
+/** 跳过 /health 探针，避免 Loki 中无效噪音 */
     if (ctx.path === "/health") {
       return;
     }
